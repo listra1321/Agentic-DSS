@@ -41,7 +41,7 @@ def build_context_from_input(data):
     return "\n".join(texts)
 
 # ======================================================
-# Load Dataset (SAMA DENGAN KODE PROF)
+# Load Dataset
 # ======================================================
 DATA_PATH = "db_listra.jsonl"
 
@@ -53,7 +53,7 @@ dataset_sample = load_jsonl(DATA_PATH, limit=3)
 context_data = build_context_from_input(dataset_sample)
 
 # ======================================================
-# UI (SAMA DENGAN KODE PROF)
+# UI
 # ======================================================
 st.title("🌿 Agentic Decision Support System (DSS) Ekowisata")
 st.markdown(
@@ -79,7 +79,14 @@ tujuan_kebijakan = st.selectbox(
 )
 
 # ======================================================
-# DSS Inference (LOGIKA PROF, API DIGANTI)
+# VALIDASI DATA (ANTI HALUSINASI)
+# ======================================================
+if not context_data.strip():
+    st.warning("Data ulasan kosong. Pastikan file JSONL berisi field 'input'.")
+    st.stop()
+
+# ======================================================
+# DSS Inference
 # ======================================================
 if st.button("🧠 Generate Storytelling & Rekomendasi Kebijakan"):
     with st.spinner("Melakukan penalaran kebijakan berbasis storytelling..."):
@@ -87,26 +94,32 @@ if st.button("🧠 Generate Storytelling & Rekomendasi Kebijakan"):
         prompt = f"""
 Anda adalah sistem pendukung keputusan kebijakan ekowisata berkelanjutan.
 
-Berikut adalah data ulasan wisatawan yang merepresentasikan kondisi lapangan:
+ATURAN WAJIB (TIDAK BOLEH DILANGGAR):
+1. Fokus HANYA pada destinasi: {destinasi}
+2. DILARANG menyebut, membandingkan, atau menyinggung destinasi wisata lain.
+3. Seluruh analisis HARUS berbasis data ulasan di bawah ini.
+
+DATA ULASAN WISATAWAN:
 {context_data}
 
-Destinasi: {destinasi}
-Tujuan kebijakan: {tujuan_kebijakan}
+TUJUAN KEBIJAKAN:
+{tujuan_kebijakan}
 
-Tugas Anda:
-1. Susun storytelling kebijakan wisata yang runtut, alami, dan reflektif berdasarkan data di atas.
-2. Identifikasi isu utama yang muncul dari pengalaman pengunjung.
-3. Berikan 3 rekomendasi kebijakan konkret dan aplikatif.
+TUGAS ANDA:
+1. Susun storytelling kebijakan wisata yang runtut, alami, dan reflektif KHUSUS untuk {destinasi}.
+2. Identifikasi isu utama yang muncul dari pengalaman pengunjung di {destinasi}.
+3. Berikan 3 rekomendasi kebijakan konkret dan aplikatif untuk pengelolaan {destinasi}.
 
-Gunakan bahasa formal kebijakan, namun tetap naratif dan mudah dipahami.
+Gunakan bahasa formal kebijakan, naratif, dan berbasis bukti.
 """
 
         payload = {
             "model": "meta-llama/llama-3.2-3b-instruct",
             "messages": [
+                {"role": "system", "content": f"Anda HANYA membahas destinasi {destinasi}."},
                 {"role": "user", "content": prompt}
             ],
-            "temperature": 0.6
+            "temperature": 0.4  # diturunkan untuk mengurangi halusinasi
         }
 
         headers = {
@@ -127,9 +140,21 @@ Gunakan bahasa formal kebijakan, namun tetap naratif dan mudah dipahami.
 
         hasil = response.json()["choices"][0]["message"]["content"]
 
+        # ==================================================
+        # POST-CHECK 
+        # ==================================================
+        if destinasi.lower() not in hasil.lower():
+            st.warning(
+                "Output tidak secara eksplisit menyebut destinasi yang dipilih. "
+                "Silakan generate ulang untuk konsistensi kebijakan."
+            )
+
     st.subheader("📄 Storytelling Kebijakan & Rekomendasi DSS")
     st.write(hasil)
 
+# ======================================================
+# Footer
+# ======================================================
 st.markdown("---")
 st.caption(
     "Catatan: Sistem ini merupakan prototipe DSS berbasis agentic control "
