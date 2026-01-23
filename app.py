@@ -12,6 +12,13 @@ st.set_page_config(
 )
 
 # ======================================================
+# Inisialisasi Session State (WAJIB)
+# ======================================================
+if "destinasi_input" not in st.session_state:
+    st.session_state["destinasi_input"] = "Danau Toba"
+
+
+# ======================================================
 # OpenRouter Config 
 # ======================================================
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
