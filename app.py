@@ -22,6 +22,16 @@ if not OPENROUTER_API_KEY:
     st.stop()
 
 # ======================================================
+# Password Akses Sistem (DARI STREAMLIT SECRETS)
+# ======================================================
+SYSTEM_PASSWORD = st.secrets.get("SYSTEM_PASSWORD")
+
+if not SYSTEM_PASSWORD:
+    st.error("SYSTEM_PASSWORD belum diset di Streamlit Secrets.")
+    st.stop()
+
+
+# ======================================================
 # Destinasi Valid (KUNCI SISTEM)
 # ======================================================
 DESTINASI_VALID = ["Danau Toba", "Candi Borobudur"]
@@ -56,6 +66,32 @@ if not os.path.exists(DATA_PATH):
 
 dataset_sample = load_jsonl(DATA_PATH, limit=3)
 context_data = build_context_from_input(dataset_sample)
+
+# ======================================================
+# Session State Login
+# ======================================================
+if "authenticated" not in st.session_state:
+    st.session_state["authenticated"] = False
+
+# ======================================================
+# LOGIN GATE
+# ======================================================
+if not st.session_state["authenticated"]:
+    st.title("🔐 Login Sistem DSS Ekowisata")
+    st.markdown("Masukkan password untuk mengakses sistem.")
+
+    password = st.text_input("Password", type="password")
+
+    if st.button("Login"):
+        if password == SYSTEM_PASSWORD:
+            st.session_state["authenticated"] = True
+            st.success("Login berhasil. Mengalihkan ke sistem...")
+            st.experimental_rerun()
+        else:
+            st.error("Password salah. Silakan coba lagi.")
+
+    st.stop()
+
 
 # ======================================================
 # UI
