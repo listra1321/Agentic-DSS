@@ -2,6 +2,12 @@ import streamlit as st
 import os
 import json
 import requests
+from dotenv import load_dotenv
+
+# ======================================================
+# Load .env (LOCAL DEVELOPMENT)
+# ======================================================
+load_dotenv()
 
 # ======================================================
 # Streamlit Page Config
@@ -12,17 +18,25 @@ st.set_page_config(
 )
 
 # ======================================================
-# OpenRouter Config 
+# OpenRouter Config
 # ======================================================
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 
 if not OPENROUTER_API_KEY:
-    st.error("OPENROUTER_API_KEY belum diset di Streamlit Secrets.")
+    st.error(
+        "OPENROUTER_API_KEY belum ditemukan. "
+        "Pastikan file .env berisi OPENROUTER_API_KEY."
+    )
     st.stop()
 
 # ======================================================
-# Utility Functions 
+# Destinasi Valid (KUNCI DOMAIN PENELITIAN)
+# ======================================================
+DESTINASI_VALID = ["Danau Toba", "Candi Borobudur"]
+
+# ======================================================
+# Utility Functions
 # ======================================================
 def load_jsonl(path, limit=3):
     data = []
@@ -66,6 +80,7 @@ with st.expander("🔍 Contoh Data Ulasan Wisatawan (JSONL)"):
 
 st.subheader("📥 Konteks Pengambilan Keputusan Kebijakan")
 
+# (INPUT ASLI PROF – TIDAK DIUBAH)
 destinasi = st.text_input("Nama Destinasi Wisata", "Danau Toba")
 
 tujuan_kebijakan = st.selectbox(
@@ -86,40 +101,60 @@ if not context_data.strip():
     st.stop()
 
 # ======================================================
+# VALIDASI DESTINASI (KUNCI SISTEM)
+# ======================================================
+if destinasi not in DESTINASI_VALID:
+    st.error(
+        "🙏 Maaf, destinasi yang Anda masukkan tidak tersedia dalam sistem.\n\n"
+        "Sistem ini hanya mendukung **Danau Toba** dan **Candi Borobudur**, "
+        "sesuai dengan cakupan data dan batasan penelitian."
+    )
+    st.stop()
+
+# ======================================================
 # DSS Inference
 # ======================================================
 if st.button("🧠 Generate Storytelling & Rekomendasi Kebijakan"):
     with st.spinner("Melakukan penalaran kebijakan berbasis storytelling..."):
 
-        prompt = f"""
-Anda adalah sistem pendukung keputusan kebijakan ekowisata berkelanjutan.
+        prompt = (
+            f"Anda adalah sistem pendukung keputusan kebijakan ekowisata "
+            f"berkelanjutan.\n\n"
 
-ATURAN WAJIB (TIDAK BOLEH DILANGGAR):
-1. Fokus HANYA pada destinasi: {destinasi}
-2. DILARANG menyebut, membandingkan, atau menyinggung destinasi wisata lain.
-3. Seluruh analisis HARUS berbasis data ulasan di bawah ini.
+            f"ATURAN WAJIB (TIDAK BOLEH DILANGGAR):\n"
+            f"1. Fokus HANYA pada destinasi: {destinasi}\n"
+            f"2. DILARANG menyebut, membandingkan, atau menyinggung destinasi wisata lain.\n"
+            f"3. Seluruh analisis HARUS berbasis data ulasan di bawah ini.\n\n"
 
-DATA ULASAN WISATAWAN:
-{context_data}
+            f"DATA ULASAN WISATAWAN:\n"
+            f"{context_data}\n\n"
 
-TUJUAN KEBIJAKAN:
-{tujuan_kebijakan}
+            f"TUJUAN KEBIJAKAN:\n"
+            f"{tujuan_kebijakan}\n\n"
 
-TUGAS ANDA:
-1. Susun storytelling kebijakan wisata yang runtut, alami, dan reflektif KHUSUS untuk {destinasi}.
-2. Identifikasi isu utama yang muncul dari pengalaman pengunjung di {destinasi}.
-3. Berikan 3 rekomendasi kebijakan konkret dan aplikatif untuk pengelolaan {destinasi}.
+            f"TUGAS ANDA:\n"
+            f"1. Susun storytelling kebijakan wisata yang runtut, alami, dan reflektif "
+            f"KHUSUS untuk {destinasi}.\n"
+            f"2. Identifikasi isu utama yang muncul dari pengalaman pengunjung di {destinasi}.\n"
+            f"3. Berikan 3 rekomendasi kebijakan konkret dan aplikatif "
+            f"untuk pengelolaan {destinasi}.\n\n"
 
-Gunakan bahasa formal kebijakan, naratif, dan berbasis bukti.
-"""
+            f"Gunakan bahasa formal kebijakan, naratif, dan berbasis bukti."
+        )
 
         payload = {
             "model": "meta-llama/llama-3.2-3b-instruct",
             "messages": [
-                {"role": "system", "content": f"Anda HANYA membahas destinasi {destinasi}."},
+                {
+                    "role": "system",
+                    "content": (
+                        "Anda adalah DSS kebijakan ekowisata. "
+                        "Anda HANYA boleh membahas Danau Toba atau Candi Borobudur."
+                    )
+                },
                 {"role": "user", "content": prompt}
             ],
-            "temperature": 0.4  # diturunkan untuk mengurangi halusinasi
+            "temperature": 0.4
         }
 
         headers = {
@@ -141,7 +176,7 @@ Gunakan bahasa formal kebijakan, naratif, dan berbasis bukti.
         hasil = response.json()["choices"][0]["message"]["content"]
 
         # ==================================================
-        # POST-CHECK 
+        # POST-CHECK (KONSISTENSI DESTINASI)
         # ==================================================
         if destinasi.lower() not in hasil.lower():
             st.warning(
