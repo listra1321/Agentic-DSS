@@ -72,7 +72,13 @@ with st.expander("🔍 Contoh Data Ulasan Wisatawan (JSONL)"):
 st.subheader("📥 Konteks Pengambilan Keputusan Kebijakan")
 
 # INPUT ASLI PROF (TIDAK DIUBAH)
-destinasi = st.text_input("Nama Destinasi Wisata", "Danau Toba")
+#destinasi = st.text_input("Nama Destinasi Wisata", "Danau Toba")
+destinasi = st.text_input(
+    "Nama Destinasi Wisata",
+    value="Danau Toba",
+    key="destinasi_input"
+)
+
 
 tujuan_kebijakan = st.selectbox(
     "Tujuan Kebijakan",
@@ -100,6 +106,8 @@ if destinasi not in DESTINASI_VALID:
         "Sistem ini hanya mendukung **Danau Toba** dan **Candi Borobudur** "
         "sesuai dengan cakupan data penelitian."
     )
+    # RESET KE MENU AWAL (AUTO)
+    st.session_state["destinasi_input"] = "Danau Toba"
     st.stop()
 
 # ======================================================
