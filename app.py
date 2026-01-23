@@ -86,7 +86,7 @@ if not st.session_state["authenticated"]:
         if password == SYSTEM_PASSWORD:
             st.session_state["authenticated"] = True
             st.success("Login berhasil. Mengalihkan ke sistem...")
-            st.experimental_rerun()
+            st.rerun()
         else:
             st.error("Password salah. Silakan coba lagi.")
 
