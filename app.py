@@ -12,13 +12,6 @@ st.set_page_config(
 )
 
 # ======================================================
-# Inisialisasi Session State (WAJIB)
-# ======================================================
-if "destinasi_input" not in st.session_state:
-    st.session_state["destinasi_input"] = "Danau Toba"
-
-
-# ======================================================
 # OpenRouter Config 
 # ======================================================
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
@@ -79,12 +72,8 @@ with st.expander("🔍 Contoh Data Ulasan Wisatawan (JSONL)"):
 st.subheader("📥 Konteks Pengambilan Keputusan Kebijakan")
 
 # INPUT ASLI PROF (TIDAK DIUBAH)
-#destinasi = st.text_input("Nama Destinasi Wisata", "Danau Toba")
-destinasi = st.text_input(
-    "Nama Destinasi Wisata",
-    value="Danau Toba",
-    key="destinasi_input"
-)
+destinasi = st.text_input("Nama Destinasi Wisata", "Danau Toba")
+
 
 
 tujuan_kebijakan = st.selectbox(
@@ -114,7 +103,6 @@ if destinasi not in DESTINASI_VALID:
         "sesuai dengan cakupan data penelitian."
     )
     # RESET KE MENU AWAL (AUTO)
-    st.session_state["destinasi_input"] = "Danau Toba"
     st.stop()
 
 # ======================================================
